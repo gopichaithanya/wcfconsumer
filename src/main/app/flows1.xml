@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wsa="http://cxf.apache.org/ws/addressing" version="EE-3.2.2" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd 
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd 
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd 
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+http://cxf.apache.org/ws/addressing http://cxf.apache.org/schemas/ws-addr-conf.xsd ">
+    <flow name="flows1Flow1" doc:name="flows1Flow1">
+        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="submitOrder" doc:name="HTTP"/>
+        <response>
+            <logger message="Order posted, order id: #[payload]" level="INFO" doc:name="Log order id"/>
+        </response>
+        <http:body-to-parameter-map-transformer doc:name="Transform HTML form to map"/>
+        <choice doc:name="Choice">
+            <when expression="Integer.parseInt(payload['qty']) &gt; 100" evaluator="groovy">
+                <processor-chain>
+                    <logger message="Wholesale order, storing for later processing" level="INFO" doc:name="Log wholesale order"/>
+                    <mulexml:object-to-xml-transformer doc:name="Object to XML"/>
+                    <file:outbound-endpoint path="src/test/resources/out" responseTimeout="10000" doc:name="Create order file"/>
+                    <scripting:component doc:name="Generate internal order id">
+                        <scripting:script engine="Groovy">
+                            <scripting:text><![CDATA[return (new Random()).nextInt();]]></scripting:text>
+                        </scripting:script>
+                    </scripting:component>
+                </processor-chain>
+            </when>
+            <otherwise>
+                <processor-chain>
+                    <logger message="Retail order, sending to provider" level="INFO" doc:name="Log retail order"/>
+                    <scripting:component doc:name="Prepare order request">
+                        <scripting:script engine="Groovy">
+                            <scripting:text><![CDATA[import com.mulesoft.demo.wcfservice.Order;
+import com.mulesoft.demo.wcfservice.ObjectFactory;
+
+ObjectFactory of = new ObjectFactory();
+
+Order o = new Order();
+o.setProduct(of.createString(payload['productCode']));
+o.setQuantity(of.createString(payload['qty']));
+
+return o;]]></scripting:text>
+                        </scripting:script>
+                    </scripting:component>
+                    <flow-ref name="invokeWCFService" doc:name="Post order to provider"/>
+                </processor-chain>
+            </otherwise>
+        </choice>
+    </flow>
+    <sub-flow name="invokeWCFService" doc:name="invokeWCFService">
+        <cxf:jaxws-client operation="createOrder" clientClass="com.mulesoft.demo.wcfservice.Service1" port="WSHttpBinding_IService1" enableMuleSoapHeaders="true" doc:name="Prepare SOAP request" doc:description="In order to invoke WCF SOAP web services, WS-Addressing must be enabled."/>
+        <http:outbound-endpoint exchange-pattern="request-response" host="localhost" port="2628" path="Service1.svc" doc:name="Invoke WCF SOAP Service"/>
+    </sub-flow>
+</mule>
