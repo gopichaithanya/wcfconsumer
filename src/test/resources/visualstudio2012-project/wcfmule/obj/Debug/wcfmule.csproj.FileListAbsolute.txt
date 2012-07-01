@@ -1,0 +1,5 @@
+C:\Users\Jesus De Oliveira\Documents\Visual Studio 2012\Projects\wcfmule\wcfmule\bin\wcfmule.dll
+C:\Users\Jesus De Oliveira\Documents\Visual Studio 2012\Projects\wcfmule\wcfmule\bin\wcfmule.pdb
+C:\Users\Jesus De Oliveira\Documents\Visual Studio 2012\Projects\wcfmule\wcfmule\obj\Debug\wcfmule.csprojResolveAssemblyReference.cache
+C:\Users\Jesus De Oliveira\Documents\Visual Studio 2012\Projects\wcfmule\wcfmule\obj\Debug\wcfmule.dll
+C:\Users\Jesus De Oliveira\Documents\Visual Studio 2012\Projects\wcfmule\wcfmule\obj\Debug\wcfmule.pdb
