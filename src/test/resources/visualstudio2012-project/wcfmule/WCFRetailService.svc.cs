@@ -19,6 +19,7 @@ namespace wcfmule
             order.Id = newOrderId.ToString();
 
             // do something with the order...
+            System.Diagnostics.Debug.WriteLine("Order received: " + order.Id + "; product id: " + order.ProductId + "; quantity: " + order.Quantity);
 
             return order.Id;
         }
